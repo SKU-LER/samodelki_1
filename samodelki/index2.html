@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Мастерская — электронные самоделки</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:#eef1f5;color:#1f2937;line-height:1.5}
+  header{background:linear-gradient(135deg,#0f172a,#1e40af);color:#fff;padding:28px 16px;text-align:center}
+  header h1{font-size:1.7rem}
+  header p{opacity:.85;margin-top:4px}
+  .tools{max-width:1100px;margin:16px auto;padding:0 16px;display:flex;flex-wrap:wrap;gap:10px}
+  .tools input,.tools select{padding:10px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:1rem;background:#fff}
+  .tools input{flex:1;min-width:200px}
+  .grid{max-width:1100px;margin:0 auto;padding:0 16px 40px;display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px}
+  .card{background:#fff;border-radius:12px;padding:16px;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.08);transition:.15s}
+  .card:hover{transform:translateY(-3px);box-shadow:0 6px 16px rgba(0,0,0,.14)}
+  .card .ic{font-size:2.2rem}
+  .card h3{margin:6px 0;font-size:1.05rem}
+  .card p{font-size:.9rem;color:#475569}
+  .tags{margin-top:10px;display:flex;gap:6px;flex-wrap:wrap}
+  .tag{font-size:.75rem;padding:2px 8px;border-radius:99px;background:#e2e8f0}
+  .easy{background:#bbf7d0}.medium{background:#fde68a}.hard{background:#fecaca}
+  .empty{grid-column:1/-1;text-align:center;color:#64748b;padding:40px}
+  .overlay{position:fixed;inset:0;background:rgba(15,23,42,.65);display:none;align-items:flex-start;justify-content:center;overflow-y:auto;padding:20px;z-index:10}
+  .overlay.open{display:flex}
+  .modal{background:#fff;border-radius:14px;max-width:760px;width:100%;padding:22px;position:relative}
+  .close{position:absolute;right:12px;top:8px;font-size:2rem;border:0;background:none;cursor:pointer;color:#64748b}
+  .modal h2{margin-bottom:6px;padding-right:30px}
+  .modal h4{margin:20px 0 8px;font-size:1.05rem;color:#1e40af}
+  .flow{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+  .blk{padding:8px 12px;border-radius:8px;font-size:.88rem;font-weight:600;border:2px solid;text-align:center}
+  .power{background:#fee2e2;border-color:#ef4444}
+  .input{background:#dbeafe;border-color:#3b82f6}
+  .ctrl{background:#fef9c3;border-color:#eab308}
+  .out{background:#dcfce7;border-color:#22c55e}
+  .arr{font-size:1.3rem;color:#64748b}
+  .legend{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;font-size:.78rem}
+  .legend span{padding:2px 8px;border-radius:6px;border:2px solid}
+  table{width:100%;border-collapse:collapse;font-size:.9rem}
+  td,th{border:1px solid #e2e8f0;padding:6px 8px;text-align:left}
+  th{background:#f1f5f9}
+  td.mid{text-align:center;width:40px;color:#64748b}
+  ul,ol{padding-left:22px}
+  li{margin:3px 0}
+  .tip{margin-top:16px;background:#fff7ed;border-left:4px solid #f97316;padding:10px 12px;border-radius:6px;font-size:.92rem}
+</style>
+</head>
+<body>
+<header>
+  <h1>⚡ Мастерская самоделок</h1>
+  <p>Простые электронные схемы с понятным описанием соединений</p>
+</header>
+
+<div class="tools">
+  <input id="q" type="search" placeholder="Поиск: мигалка, датчик, усилитель...">
+  <select id="cat"></select>
+  <select id="dif">
+    <option value="">Любая сложность</option>
+    <option value="easy">Лёгкая</option>
+    <option value="medium">Средняя</option>
+    <option value="hard">Сложная</option>
+  </select>
+</div>
+
+<div class="grid" id="grid"></div>
+
+<div class="overlay" id="ov">
+  <div class="modal" id="modal"></div>
+</div>
+
+<script>
+var DIFF = {easy:"Лёгкая", medium:"Средняя", hard:"Сложная"};
+
+var P = [
+{
+  title:"Мигалка на NE555", icon:"💡", cat:"Свет", diff:"easy",
+  desc:"Светодиод мигает примерно раз в секунду. Классика для начала.",
+  flow:[["power","Батарея 9 В"],["ctrl","NE555 (генератор)"],["out","Светодиод + резистор"]],
+  parts:["NE555","Резистор 1 кОм (R1)","Резистор 47 кОм (R2)","Конденсатор 10 мкФ","Конденсатор 10 нФ","Светодиод","Резистор 470 Ом","Батарея 9 В"],
+  conn:[["Плюс батареи","Выводы 8 и 4 NE555"],["Минус батареи","Вывод 1 NE555"],["R1","Между выводом 8 и выводом 7"],["R2","Между выводом 7 и выводами 2+6"],["Конденсатор 10 мкФ","Между выводами 2+6 и минусом"],["Конденсатор 10 нФ","Между выводом 5 и минусом"],["Вывод 3","Резистор 470 Ом → анод светодиода"],["Катод светодиода","Минус батареи"]],
+  steps:["Вставьте NE555 в макетную плату.","Соедините выводы 2 и 6 между собой.","Подключите R1, R2 и конденсатор по таблице.","Добавьте светодиод с резистором на вывод 3.","Подайте питание. Для более частого мигания уменьшите конденсатор."],
+  tip:"Частота ≈ 1,44 / ((R1 + 2·R2) · C). Чем больше C или R2, тем медленнее мигает."
+},
+{
+  title:"Сенсорный выключатель", icon:"👆", cat:"Управление", diff:"easy",
+  desc:"Лампа или светодиод включаются при касании пальцем.",
+  flow:[["power","Питание 5–9 В"],["input","Сенсорная пластина"],["ctrl","Два транзистора (составной)"],["out","Светодиод / лампа"]],
+  parts:["2 × BC547","Резистор 1 МОм","Резистор 1 кОм","Светодиод + резистор 330 Ом","Две металлические пластины","Батарея 9 В"],
+  conn:[["Плюс батареи","Одна сенсорная пластина и коллекторы T1, T2"],["Вторая пластина","Резистор 1 МОм → база T1"],["Эмиттер T1","База T2"],["Коллектор T2","Нагрузка (светодиод + 330 Ом) → плюс"],["Эмиттеры T2","Минус батареи"]],
+  steps:["Соберите пару Дарлингтона: эмиттер T1 на базу T2.","Подключите пластины так, чтобы палец замыкал плюс и базу.","Нагрузку включите в коллектор T2.","Коснитесь двух пластин одновременно — нагрузка включится."],
+  tip:"Для мощной нагрузки замените T2 на BD139 или полевой транзистор."
+},
+{
+  title:"Усилитель на LM386", icon:"🔊", cat:"Звук", diff:"easy",
+  desc:"Маленький усилитель для наушников или небольшой колонки.",
+  flow:[["input","Источник звука"],["ctrl","Регулятор громкости 10 кОм"],["ctrl","LM386"],["out","Динамик 8 Ом"],["power","Питание 6–12 В"]],
+  parts:["LM386","Потенциометр 10 кОм","Конденсатор 10 мкФ (вход)","Конденсатор 220 мкФ (выход)","Конденсатор 100 мкФ (питание)","Резистор 10 Ом + 47 нФ","Динамик 8 Ом"],
+  conn:[["Источник звука (сигнал)","Крайний вывод потенциометра"],["Средний вывод потенциометра","Вывод 3 LM386 (через 10 мкФ)"],["Вывод 2","Минус (земля)"],["Вывод 4","Минус"],["Вывод 6","Плюс питания"],["Вывод 5","220 мкФ (+) → динамик"],["Второй контакт динамика","Минус"],["Выводы 1 и 8","Конденсатор 10 мкФ — усиление ×200"]],
+  steps:["Установите микросхему на плату.","Подключите питание и землю.","Поставьте вход через конденсатор и регулятор громкости.","Выход подайте на динамик через 220 мкФ.","Поставьте конденсатор 100 мкФ рядом с выводом питания."],
+  tip:"Если свистит — укоротите провода входа и добавьте цепочку 10 Ом + 47 нФ на выходе."
+},
+{
+  title:"Термостат на LM35", icon:"🌡️", cat:"Датчики", diff:"medium",
+  desc:"Включает вентилятор, когда температура выше заданной.",
+  flow:[["power","Блок 12 В"],["input","Датчик LM35"],["ctrl","Компаратор LM393"],["ctrl","Транзистор + реле"],["out","Вентилятор"]],
+  parts:["LM35","LM393","Потенциометр 10 кОм","Транзистор BC547","Реле 12 В","Диод 1N4007","Резистор 1 кОм","Вентилятор 12 В"],
+  conn:[["LM35 вывод 1","+5 В"],["LM35 вывод 3","Земля"],["LM35 вывод 2 (выход)","Вход IN+ компаратора"],["Потенциометр (средний)","Вход IN− компаратора"],["Выход компаратора","Резистор 1 кОм → база BC547"],["Коллектор BC547","Катушка реле"],["Диод 1N4007","Параллельно катушке (катодом к плюсу)"],["Контакты реле","В разрыв питания вентилятора"]],
+  steps:["Подайте на LM35 5 В.","Выход LM35 даёт 10 мВ на °C (30 °C = 0,3 В).","Потенциометром задайте порог.","Проверьте, что реле щёлкает при нагреве пальцами."],
+  tip:"Для гистерезиса добавьте резистор 1 МОм из выхода компаратора на IN+."
+},
+{
+  title:"Автоматический ночник", icon:"🌙", cat:"Свет", diff:"easy",
+  desc:"Светодиоды загораются, когда в комнате становится темно.",
+  flow:[["power","Батарея 9 В"],["input","Фоторезистор"],["ctrl","Транзистор BC547"],["out","Светодиоды"]],
+  parts:["Фоторезистор GL5528","Транзистор BC547","Потенциометр 100 кОм","Резистор 1 кОм","Светодиоды 3 шт.","Резисторы 470 Ом"],
+  conn:[["Плюс","Фоторезистор → потенциометр → минус"],["Точка между ними","Резистор 1 кОм → база BC547"],["Эмиттер","Минус"],["Коллектор","Светодиоды (с резисторами) → плюс"]],
+  steps:["Соберите делитель: фоторезистор и потенциометр.","Подключите середину делителя к базе.","Подключите светодиоды к коллектору.","Потенциометром подберите порог срабатывания."],
+  tip:"Если ночник работает наоборот, поменяйте местами фоторезистор и потенциометр."
+},
+{
+  title:"Регулируемый БП на LM317", icon:"🔌", cat:"Питание", diff:"medium",
+  desc:"Блок питания 1,25–30 В с током до 1,5 А.",
+  flow:[["power","Трансформатор / адаптер"],["ctrl","Диодный мост + 2200 мкФ"],["ctrl","LM317"],["input","Потенциометр 5 кОм"],["out","Выход"]],
+  parts:["LM317","Диодный мост","Конденсатор 2200 мкФ 35 В","Конденсатор 10 мкФ","Резистор 240 Ом","Потенциометр 5 кОм","Диод 1N4007","Радиатор"],
+  conn:[["Выпрямленное +","Вывод IN LM317"],["Вывод OUT","Выход «+»"],["Резистор 240 Ом","Между OUT и ADJ"],["Потенциометр 5 кОм","Между ADJ и землёй"],["Конденсатор 10 мкФ","На выходе между + и −"],["Диод 1N4007","Из OUT в IN (катод к IN) — защита"]],
+  steps:["Соберите выпрямитель с конденсатором.","Подключите LM317 к радиатору.","Добавьте делитель 240 Ом и потенциометр.","Проверьте напряжение мультиметром без нагрузки."],
+  tip:"Формула: Uвых = 1,25 · (1 + R2/240). Входное напряжение должно быть минимум на 3 В выше выходного."
+},
+{
+  title:"Сигнализация с герконом", icon:"🚪", cat:"Безопасность", diff:"medium",
+  desc:"Сирена включается, когда открывают дверь.",
+  flow:[["power","Батарея 9 В"],["input","Геркон + магнит"],["ctrl","Тиристор (защёлка)"],["out","Сирена / зуммер"]],
+  parts:["Геркон","Магнит","Тиристор MCR100","Резистор 1 кОм","Резистор 10 кОм","Зуммер 9 В","Кнопка сброса"],
+  conn:[["Плюс","Зуммер → анод тиристора"],["Катод тиристора","Минус"],["Управляющий электрод","Резистор 1 кОм → плюс через геркон"],["Резистор 10 кОм","Между управляющим электродом и минусом"],["Кнопка сброса","В разрыв питания"]],
+  steps:["Закрепите магнит на двери, геркон на раме.","Пока дверь закрыта, геркон должен быть разомкнут по схеме.","При открытии цепь подаёт ток на тиристор.","Тиристор удерживает сигнал, пока не нажмёте сброс."],
+  tip:"Сделайте проверку: подвигайте магнит и убедитесь в срабатывании."
+},
+{
+  title:"Индикатор уровня воды", icon:"💧", cat:"Датчики", diff:"easy",
+  desc:"Три светодиода показывают уровень воды в баке.",
+  flow:[["power","Питание 9 В"],["input","Три электрода в баке"],["ctrl","Транзисторы BC547 × 3"],["out","LED: низкий/средний/полный"]],
+  parts:["3 × BC547","3 светодиода","Резисторы 10 кОм × 3","Резисторы 330 Ом × 3","Провода, нержавеющие электроды"],
+  conn:[["Плюс","Общий электрод в воде"],["Электроды уровней","Резистор 10 кОм → база каждого транзистора"],["Коллектор","Светодиод + 330 Ом → плюс"],["Эмиттеры","Минус"]],
+  steps:["Закрепите электроды на разной высоте.","Общий электрод опустите до дна.","Подключите три транзисторных каскада.","Залейте воду и проверьте свечение."],
+  tip:"Используйте переменный ток или нержавейку, чтобы электроды не разъедало."
+},
+{
+  title:"Зарядка USB 5 В от 12 В", icon:"🔋", cat:"Питание", diff:"easy",
+  desc:"Питание телефона от автомобильного аккумулятора.",
+  flow:[["power","Вход 12 В"],["ctrl","Предохранитель + диод"],["ctrl","Стабилизатор 7805"],["out","Разъём USB"]],
+  parts:["7805","Конденсатор 330 нФ","Конденсатор 100 нФ","Диод 1N4007","Предохранитель 1 А","Разъём USB"],
+  conn:[["+12 В","Предохранитель → диод → вход 7805"],["Конденсатор 330 нФ","Между входом и землёй"],["Выход 7805","USB VBUS (контакт 1)"],["Конденсатор 100 нФ","Между выходом и землёй"],["Земля","USB GND (контакт 4)"]],
+  steps:["Подключите вход через предохранитель и диод.","Припаяйте конденсаторы к ножкам 7805.","Подключите USB-разъём.","Проверьте 5 В мультиметром до подключения телефона."],
+  tip:"7805 сильно греется при токе выше 0,5 А. Поставьте радиатор или используйте импульсный модуль."
+},
+{
+  title:"Сирена на двух транзисторах", icon:"🚨", cat:"Звук", diff:"medium",
+  desc:"Мультивибратор, который издаёт громкий переливающийся звук.",
+  flow:[["power","Питание 9 В"],["ctrl","Мультивибратор (2 × BC547)"],["ctrl","Усилитель"],["out","Динамик"]],
+  parts:["2 × BC547","2 × конденсатор 100 нФ","2 × резистор 10 кОм","2 × резистор 1 кОм","Динамик 8 Ом"],
+  conn:[["Коллектор T1","Через конденсатор → база T2"],["Коллектор T2","Через конденсатор → база T1"],["Базы","Резисторы 10 кОм → плюс"],["Коллекторы","Резисторы 1 кОм → плюс"],["Эмиттеры","Минус"],["Динамик","Между коллектором T2 и плюсом (через 100 Ом)"]],
+  steps:["Соберите симметричную схему.","Подайте питание.","Если нет звука, поменяйте конденсаторы.","Для разного тона поменяйте ёмкости."],
+  tip:"Меняя конденсаторы от 10 нФ до 1 мкФ, получите разные звуки."
+},
+{
+  title:"Регулятор оборотов (ШИМ)", icon:"🌀", cat:"Управление", diff:"medium",
+  desc:"Плавная регулировка скорости вентилятора или мотора.",
+  flow:[["power","Питание 12 В"],["input","Потенциометр"],["ctrl","NE555 (ШИМ)"],["ctrl","MOSFET IRLZ44"],["out","Мотор"]],
+  parts:["NE555","IRLZ44N","Потенциометр 100 кОм","2 × диод 1N4148","Конденсатор 10 нФ","Резистор 1 кОм","Диод 1N5819","Двигатель"],
+  conn:[["NE555 вывод 2+6","Между диодами и конденсатором 10 нФ"],["Потенциометр","Между диодами, средний вывод к выводу 7"],["Вывод 3","Резистор 1 кОм → затвор MOSFET"],["Сток MOSFET","Минус мотора"],["Исток","Земля"],["Диод 1N5819","Параллельно мотору (защита)"]],
+  steps:["Соберите генератор ШИМ на NE555.","Подключите выход к затвору.","Подключите мотор и защитный диод.","Крутите потенциометр и наблюдайте скорость."],
+  tip:"Для моторов выше 5 А поставьте MOSFET на радиатор."
+},
+{
+  title:"Таймер задержки выключения", icon:"⏱️", cat:"Управление", diff:"hard",
+  desc:"После нажатия кнопки нагрузка работает заданное время и выключается.",
+  flow:[["power","Питание 12 В"],["input","Кнопка запуска"],["ctrl","NE555 (моностабильный режим)"],["ctrl","Транзистор + реле"],["out","Нагрузка"]],
+  parts:["NE555","Конденсатор 100 мкФ","Резистор 100 кОм (подбор)","Кнопка","Резистор 10 кОм","BC547","Реле 12 В","Диод 1N4007"],
+  conn:[["Вывод 2","Резистор 10 кОм → плюс; кнопка на землю"],["Выводы 6+7","Резистор 100 кОм → плюс"],["Выводы 6+7","Конденсатор 100 мкФ → земля"],["Вывод 3","Резистор 1 кОм → база BC547"],["Катушка реле","Между коллектором и плюсом (диод параллельно)"]],
+  steps:["Соберите схему моностабильного таймера.","Нажмите кнопку — реле включится.","Время T ≈ 1,1 · R · C.","Подберите R и C под нужную задержку."],
+  tip:"Для 10 секунд: R = 100 кОм, C = 100 мкФ."
+}
+];
+
+var grid = document.getElementById("grid");
+var q = document.getElementById("q");
+var cat = document.getElementById("cat");
+var dif = document.getElementById("dif");
+var ov = document.getElementById("ov");
+var modal = document.getElementById("modal");
+
+function esc(s){ return String(s).replace(/[&<>"]/g, function(c){ return {"&":"&","<":"<",">":">",'"':"""}[c]; }); }
+
+(function initCats(){
+  var cats = [];
+  P.forEach(function(p){ if(cats.indexOf(p.cat) < 0) cats.push(p.cat); });
+  cat.innerHTML = '<option value="">Все категории</option>' +
+    cats.map(function(c){ return '<option>' + esc(c) + '</option>'; }).join("");
+})();
+
+function render(){
+  var t = q.value.trim().toLowerCase();
+  var list = P.map(function(p,i){ p.i = i; return p; }).filter(function(p){
+    if(cat.value && p.cat !== cat.value) return false;
+    if(dif.value && p.diff !== dif.value) return false;
+    if(!t) return true;
+    var hay = (p.title + " " + p.desc + " " + p.parts.join(" ")).toLowerCase();
+    return hay.indexOf(t) >= 0;
+  });
+  if(!list.length){ grid.innerHTML = '<div class="empty">Ничего не найдено 😕</div>'; return; }
+  grid.innerHTML = list.map(function(p){
+    return '<div class="card" onclick="openP(' + p.i + ')">' +
+      '<div class="ic">' + p.icon + '</div>' +
+      '<h3>' + esc(p.title) + '</h3>' +
+      '<p>' + esc(p.desc) + '</p>' +
+      '<div class="tags"><span class="tag">' + esc(p.cat) + '</span>' +
+      '<span class="tag ' + p.diff + '">' + DIFF[p.diff] + '</span></div></div>';
+  }).join("");
+}
+
+function openP(i){
+  var p = P[i];
+  var flow = p.flow.map(function(b){
+    return '<div class="blk ' + b[0] + '">' + esc(b[1]) + '</div>';
+  }).join('<span class="arr">➜</span>');
+  var conn = p.conn.map(function(c,n){
+    return '<tr><td>' + (n+1) + '</td><td>' + esc(c[0]) + '</td><td class="mid">→</td><td>' + esc(c[1]) + '</td></tr>';
+  }).join("");
+  modal.innerHTML =
+    '<button class="close" onclick="closeP()">×</button>' +
+    '<h2>' + p.icon + ' ' + esc(p.title) + '</h2>' +
+    '<div class="tags"><span class="tag">' + esc(p.cat) + '</span><span class="tag ' + p.diff + '">' + DIFF[p.diff] + '</span></div>' +
+    '<p style="margin-top:8px">' + esc(p.desc) + '</p>' +
+    '<h4>🗺️ Блок-схема</h4><div class="flow">' + flow + '</div>' +
+    '<div class="legend"><span class="power">Питание</span><span class="input">Вход / датчик</span><span class="ctrl">Управление</span><span class="out">Выход</span></div>' +
+    '<h4>🔗 Что куда подключать</h4>' +
+    '<table><tr><th>№</th><th>Откуда</th><th></th><th>Куда</th></tr>' + conn + '</table>' +
+    '<h4>🧰 Детали</h4><ul>' + p.parts.map(function(x){ return '<li>' + esc(x) + '</li>'; }).join("") + '</ul>' +
+    '<h4>🛠️ Порядок сборки</h4><ol>' + p.steps.map(function(x){ return '<li>' + esc(x) + '</li>'; }).join("") + '</ol>' +
+    '<div class="tip">💡 ' + esc(p.tip) + '</div>';
+  ov.classList.add("open");
+  ov.scrollTop = 0;
+}
+function closeP(){ ov.classList.remove("open"); }
+
+ov.addEventListener("click", function(e){ if(e.target === ov) closeP(); });
+document.addEventListener("keydown", function(e){ if(e.key === "Escape") closeP(); });
+q.addEventListener("input", render);
+cat.addEventListener("change", render);
+dif.addEventListener("change", render);
+render();
+</script>
+</body>
+</html>
